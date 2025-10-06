@@ -1,144 +1,83 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import PanelHeader from "./PanelHeader";
-import PanelSidebar from "./PanelSidebar";
-import List from "@mui/material/List";
-import Drawer from "@mui/material/Drawer";
 import { styled, useTheme } from "@mui/material/styles";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
-import MailIcon from "@mui/icons-material/Mail";
 import { Outlet } from "react-router";
-import MuiAppBar from "@mui/material/AppBar";
-import type { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
-
-const drawerWidth = 240;
-
-interface AppBarProps extends MuiAppBarProps {
-  open?: boolean;
-}
-
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open",
-})<AppBarProps>(({ theme }) => ({
-  transition: theme.transitions.create(["margin", "width"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  variants: [
-    {
-      props: ({ open }) => open,
-      style: {
-        width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: `${drawerWidth}px`,
-        transition: theme.transitions.create(["margin", "width"], {
-          easing: theme.transitions.easing.easeOut,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-      },
-    },
-  ],
-}));
-
-const DrawerHeader = styled("div")(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-  justifyContent: "flex-end",
-}));
+import useMediaQuery from "@mui/material/useMediaQuery";
+import DashboardHeader from "./PanelHeader";
+import DashboardSidebar from "./PanelSidebar";
+import SitemarkIcon from "../../assets/SitemarkIcon";
+import Toolbar from "@mui/material/Toolbar";
 
 export default function PanelLayout() {
-  const [open, setOpen] = React.useState(false);
+  const theme = useTheme();
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
+  const [isDesktopNavigationExpanded, setIsDesktopNavigationExpanded] =
+    React.useState(true);
+  const [isMobileNavigationExpanded, setIsMobileNavigationExpanded] =
+    React.useState(false);
 
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
+  const isOverMdViewport = useMediaQuery(theme.breakpoints.up("md"));
+
+  const isNavigationExpanded = isOverMdViewport
+    ? isDesktopNavigationExpanded
+    : isMobileNavigationExpanded;
+
+  const setIsNavigationExpanded = React.useCallback(
+    (newExpanded: boolean) => {
+      if (isOverMdViewport) {
+        setIsDesktopNavigationExpanded(newExpanded);
+      } else {
+        setIsMobileNavigationExpanded(newExpanded);
+      }
+    },
+    [
+      isOverMdViewport,
+      setIsDesktopNavigationExpanded,
+      setIsMobileNavigationExpanded,
+    ]
+  );
+
+  const handleToggleHeaderMenu = React.useCallback(
+    (isExpanded: boolean) => {
+      setIsNavigationExpanded(isExpanded);
+    },
+    [setIsNavigationExpanded]
+  );
+
+  const layoutRef = React.useRef<HTMLDivElement>(null);
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <AppBar position="fixed">
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={[
-              {
-                mr: 2,
-              },
-              open && { display: "none" },
-            ]}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Persistent drawer
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Drawer
+    <Box
+      ref={layoutRef}
+      sx={{
+        position: "relative",
+        display: "flex",
+        overflow: "hidden",
+        height: "100%",
+        width: "100%",
+      }}
+    >
+      <DashboardHeader
+        logo={<SitemarkIcon />}
+        title=""
+        menuOpen={isNavigationExpanded}
+        onToggleMenu={handleToggleHeaderMenu}
+      />
+      <DashboardSidebar
+        expanded={isNavigationExpanded}
+        setExpanded={setIsNavigationExpanded}
+        container={layoutRef?.current ?? undefined}
+      />
+      <Box
+        component="main"
         sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: drawerWidth,
-            boxSizing: "border-box",
-          },
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          overflow: "auto",
         }}
-        variant="persistent"
-        anchor="left"
-        open={open}
       >
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            <ChevronLeftIcon />
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {["Inbox", "Starred", "Send email", "Drafts"].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List>
-          {["All mail", "Trash", "Spam"].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-      <Box style={{ width: "100%" }}>
-        <DrawerHeader />
+        <Toolbar sx={{ displayPrint: "none" }} />
         <Outlet />
       </Box>
     </Box>
